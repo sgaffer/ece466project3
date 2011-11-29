@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
     arglim = argv + argc;
     targv = argv + 1;
     block_array cfg;
+    ddg_t ddg;
 
     cmdlex();
 
@@ -35,6 +36,7 @@ int main(int argc, char **argv) {
     }
 
     cfg = generate_cfg();
+    ddg = generate_ddg();
 
     return 0;
 }

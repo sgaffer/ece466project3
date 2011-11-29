@@ -9,6 +9,7 @@
 #define	FUNCTIONS_H
 
 block_array generate_cfg();
+ddg_t generate_ddg();
 
 #endif	/* FUNCTIONS_H */
 

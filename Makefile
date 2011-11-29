@@ -1,7 +1,7 @@
 
 .PHONY: all tests
 
-OBJS :=  minicsched.o s3.y.o s3.lex.o generate_cfg.o
+OBJS :=  minicsched.o s3.y.o s3.lex.o generate_cfg.o generate_ddg.o
 
 all: sched
 
