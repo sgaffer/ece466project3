@@ -77,4 +77,16 @@ struct inst_d {
   inst_t next;
 };
 
+typedef struct nodeptr {
+    inst_t instruction;
+    struct nodeptr *left;
+    struct nodeptr *right;
+    char preds[100];
+} block;
+
+typedef struct {
+    block **label_list;
+    int num_of_labels;
+} block_array;
+
 #endif
