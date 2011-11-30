@@ -10,16 +10,16 @@ extern inst_t instList;
 ddg_t generate_ddg() {
 
     int i, j;
-    int MAX_REGS = 100;
-    int *def_inst;
-    instr_set *use_inst;
+    int MAX_REGS;
     inst_t list = instList;
     ddg_t ddg;
     int instr_count = 0;
     instr_set *temp;
+    
+    MAX_REGS = number_of_registers();
 
-    def_inst = (int *) malloc(MAX_REGS * sizeof (int));
-    use_inst = (instr_set *) malloc(MAX_REGS * sizeof (instr_set));
+    ddg.def_inst = (int *) malloc(MAX_REGS * sizeof (int));
+    ddg.use_inst = (instr_set *) malloc(MAX_REGS * sizeof (instr_set));
     //int              def_inst[MAX_REGS];
     //instruction_set  use_inst[MAX_REGS];
 
@@ -39,30 +39,30 @@ ddg_t generate_ddg() {
     //int anti_arc[n][n];   /* anti dependence edges   */
     //int output_arc[n][n]; /* output dependence edges */
 
-    for (i = 0; i < MAX_REGS; def_inst[i++] = -1); // initialize def_inst
+    for (i = 0; i < MAX_REGS; ddg.def_inst[i++] = -1); // initialize def_inst
     for (i = 0; i < MAX_REGS; i++) { // initialize use_inst
-        use_inst[i].instr = -1;
-        use_inst[i].next = NULL;
-        use_inst[i].prev = NULL;
+        ddg.use_inst[i].instr = -1;
+        ddg.use_inst[i].next = NULL;
+        ddg.use_inst[i].prev = NULL;
     }
 
     while (list) {
         for (j = 1; j <= 2; j++) {
             if (list->ops[j].t == op_reg) {
-                if (def_inst[list->ops[j].reg] != -1) {
-                    ddg.flow_arc[def_inst[list->ops[j].reg]][list->count] = 1;
+                if (ddg.def_inst[list->ops[j].reg] != -1) {
+                    ddg.flow_arc[ddg.def_inst[list->ops[j].reg]][list->count] = 1;
                 }
             }
         }
-        if (list->ops[0].t == op_reg && def_inst[list->ops[0].reg] != -1) {
-            ddg.output_arc[def_inst[list->ops[0].reg]][list->count] = 1;
+        if (list->ops[0].t == op_reg && ddg.def_inst[list->ops[0].reg] != -1) {
+            ddg.output_arc[ddg.def_inst[list->ops[0].reg]][list->count] = 1;
         }
-        for (temp = &use_inst[list->ops[0].reg]; temp != NULL; temp = temp->next) {
+        for (temp = &ddg.use_inst[list->ops[0].reg]; temp != NULL; temp = temp->next) {
             ddg.anti_arc[temp->instr][list->count] = 1;
         }
         for (j = 1; j <= 2; j++) {
             if (list->ops[j].t == op_reg) {
-                for (temp = &use_inst[list->ops[0].reg]; temp->next != NULL; temp = temp->next);
+                for (temp = &ddg.use_inst[list->ops[0].reg]; temp->next != NULL; temp = temp->next);
                 temp->next = (instr_set *) malloc(sizeof (instr_set));
                 temp->next->instr = list->ops[j].reg;
                 temp->next->next = NULL;
@@ -70,16 +70,16 @@ ddg_t generate_ddg() {
             }
         }
         if (list->ops[0].t == op_reg) {
-            if (use_inst[list->ops[0].reg].next != NULL) {
-                for (temp = &use_inst[list->ops[0].reg]; temp->next != NULL; temp = temp->next);
+            if (ddg.use_inst[list->ops[0].reg].next != NULL) {
+                for (temp = &ddg.use_inst[list->ops[0].reg]; temp->next != NULL; temp = temp->next);
                 do {
                     temp = temp->prev;
                     free(temp->next);
                     temp->next = NULL;
-                } while (temp != &use_inst[list->ops[0].reg]);
+                } while (temp != &ddg.use_inst[list->ops[0].reg]);
                 temp->instr = -1;
             }
-            def_inst[list->ops[0].reg] = list->count;
+            ddg.def_inst[list->ops[0].reg] = list->count;
         }
         list = list->next;
     }

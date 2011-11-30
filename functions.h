@@ -10,6 +10,10 @@
 
 block_array generate_cfg();
 ddg_t generate_ddg();
+void calc_depth();
+int latency(inst_t list);
+int max(int first, int second);
+int number_of_registers();
 
 #endif	/* FUNCTIONS_H */
 

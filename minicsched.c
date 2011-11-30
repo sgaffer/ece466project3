@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
 
     cfg = generate_cfg();
     ddg = generate_ddg();
+    calc_depth();
 
     return 0;
 }

@@ -76,6 +76,7 @@ struct inst_d {
   int endOp;
   inst_t next;
   int count;
+  int depth;
 };
 
 typedef struct nodeptr {
@@ -100,6 +101,8 @@ typedef struct {
     int **flow_arc;
     int **anti_arc;
     int **output_arc;
+    int *def_inst;
+    instr_set *use_inst;
 } ddg_t;
 
 #endif
