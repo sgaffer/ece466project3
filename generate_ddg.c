@@ -45,6 +45,13 @@ ddg_t generate_ddg() {
         ddg.use_inst[i].next = NULL;
         ddg.use_inst[i].prev = NULL;
     }
+    for (i = 0; i < instr_count; i++) {         // initialize flow_arc, anti_arc, output_arc to 0
+        for (j = 0; j < instr_count; j++) {
+            ddg.flow_arc[i][j] = 0;
+            ddg.anti_arc[i][j] = 0;
+            ddg.output_arc[i][j] = 0;
+        }
+    }
 
     while (list) {
         for (j = 1; j <= 2; j++) {

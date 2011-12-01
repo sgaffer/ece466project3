@@ -23,8 +23,6 @@ inst_t instList; /* list of instructions found by parser */
 int main(int argc, char **argv) {
     arglim = argv + argc;
     targv = argv + 1;
-    block_array cfg;
-    ddg_t ddg;
 
     cmdlex();
 
@@ -34,18 +32,16 @@ int main(int argc, char **argv) {
     if (infile[0]) {
         c_optimize();
     }
-
-    cfg = generate_cfg();
-    ddg = generate_ddg();
-    calc_depth();
-
+    
     return 0;
 }
 
 void c_optimize() {
     /* file pointer to dump output code */
     FILE *fptr = fopen(outfile, "w");
-
+    block_array cfg;
+    ddg_t ddg;
+    
     codegen_entry(fptr);
 
     yywrap();
@@ -67,6 +63,12 @@ void c_optimize() {
 
     /* Find single basic block loops and perform Iterative Modulo Scheduling */
 
+    cfg = generate_cfg();
+    ddg = generate_ddg();
+    calc_depth();
+    cycle_schedule(ddg);
+    
+    
     if (flag_regalloc) {
         // perform register allocation
         printf("Perform register allocation.\n"); // REMOVE ME
@@ -174,6 +176,8 @@ void print_op(FILE *fptr, struct operand op) {
 }
 
 void print_inst(FILE* fptr, inst_t i) {
+    //fprintf(fptr, "%d\t", i->depth);
+    
     if (i->label) {
         fprintf(fptr, "%s:", i->label);
     }

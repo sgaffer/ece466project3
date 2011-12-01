@@ -14,6 +14,7 @@ void calc_depth();
 int latency(inst_t list);
 int max(int first, int second);
 int number_of_registers();
+void cycle_schedule(ddg_t ddg);
 
 #endif	/* FUNCTIONS_H */
 

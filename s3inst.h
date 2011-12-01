@@ -103,6 +103,8 @@ typedef struct {
     int **output_arc;
     int *def_inst;
     instr_set *use_inst;
+    int *ready_cycle;
+    int *schedule_time;
 } ddg_t;
 
 #endif
