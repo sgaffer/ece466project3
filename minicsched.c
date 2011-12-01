@@ -41,6 +41,7 @@ void c_optimize() {
     FILE *fptr = fopen(outfile, "w");
     block_array cfg;
     ddg_t ddg;
+    int w = 4;
     
     codegen_entry(fptr);
 
@@ -66,7 +67,7 @@ void c_optimize() {
     cfg = generate_cfg();
     ddg = generate_ddg();
     calc_depth();
-    cycle_schedule(ddg);
+    cycle_schedule(ddg, w);
     
     if (flag_regalloc) {
         // perform register allocation
