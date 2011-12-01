@@ -68,7 +68,6 @@ void c_optimize() {
     calc_depth();
     cycle_schedule(ddg);
     
-    
     if (flag_regalloc) {
         // perform register allocation
         printf("Perform register allocation.\n"); // REMOVE ME

@@ -11,13 +11,13 @@ extern int count;
 void cycle_schedule(ddg_t ddg) {
 
     //int cycle = 0;
-    int i, j;
+    int i;
+    int j;
     int swapped;
-    int number_of_instructions = count - 1;
+    int number_of_instructions = count;
     inst_t list = instList;
     //inst_t ordered_list_head = instList;
     //inst_t ordered_list_tail;
-    //inst_t temp = instList;
     inst_t temp;
     inst_t *inst_list;
     int min_index;
@@ -44,10 +44,7 @@ void cycle_schedule(ddg_t ddg) {
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
 
     for (max_index = min_index; inst_list[max_index]->op != OP_RET; max_index++);
-    //max_index--;
-
-    //printf("min index = %d, max index = %d\n", min_index, max_index);
-
+    
     j = 1;
     while (swapped) {
         swapped = 0;
@@ -66,7 +63,7 @@ void cycle_schedule(ddg_t ddg) {
         inst_list[i]->next = inst_list[i+1];
     }
     inst_list[max_index]->next = NULL;
-
+    
     
     
     /*
