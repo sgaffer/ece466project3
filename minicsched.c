@@ -42,6 +42,7 @@ void c_optimize() {
     block_array cfg;
     ddg_t ddg;
     int w = 4;
+    inst_t *inst_list;
     
     codegen_entry(fptr);
 
@@ -67,7 +68,8 @@ void c_optimize() {
     cfg = generate_cfg();
     ddg = generate_ddg();
     calc_depth();
-    cycle_schedule(ddg, w);
+    inst_list = sort_by_depth();
+    cycle_schedule(inst_list, ddg, w);
     
     if (flag_regalloc) {
         // perform register allocation
