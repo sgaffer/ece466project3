@@ -53,7 +53,9 @@ void cycle_schedule(inst_t *inst_list, ddg_t ddg, int slots) {
 
     int cycle;
     int i, j, k;
+#ifdef debug
     inst_t list = instList;
+#endif
     int min_index, max_index;
     inst_t X, Y;
     int deps_met = 0;
