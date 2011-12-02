@@ -103,30 +103,27 @@ void cycle_schedule(inst_t *inst_list, ddg_t ddg, int slots) {
                     ddg.schedule_time[X->count] = cycle;
                     used_slots++;
                     k = i;
+#ifdef debug
+                    total_removed++;
+                    printf("%d\n", inst_list[k]->count);
+#endif
                     do {
                         inst_list[k] = inst_list[k + 1];
                         k++;
                     } while (k < max_index);
                     max_index--;
-#ifdef debug
-                    total_removed++;
-                    printf("%d removed, %d instructions removed so far\n", i, total_removed);
-#endif
                 }
             }
         }
         cycle++;
         used_slots = 0;
-        for (j = min_index; j <= max_index; j++) {
-            ops_in_list = 0;
-            if (inst_list[j] != NULL) {
+        if (max_index < min_index) {
 #ifdef debug
-                //printf("%d still in list!\n", j);
+            //printf("%d still in list!\n", j);
 #endif
-                ops_in_list = 1;
-                break;
-            }
-        }
+            ops_in_list = 0;
+        } else
+            ops_in_list = 1;
     }
 
 #ifdef debug
