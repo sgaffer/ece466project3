@@ -16,8 +16,9 @@ void calc_depth();
 int latency(inst_t list);
 int max(int first, int second);
 int number_of_registers();
-void cycle_schedule(inst_t *inst_list, ddg_t ddg, int slots);
+void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots);
 inst_t *sort_by_depth();
+void sort_by_cycle(ddg_t *ddg, inst_t *inst_list);
 
 #endif	/* FUNCTIONS_H */
 

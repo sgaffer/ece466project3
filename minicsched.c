@@ -15,10 +15,11 @@ void c_optimize(void);
 void codegen_entry(FILE *fptr);
 void codegen_exit(FILE *fptr);
 void find_function(void);
-void print_inst(FILE*, inst_t);
-void print_list(FILE*, inst_t);
+void print_inst(FILE*, inst_t, ddg_t *ddg);
+void print_list(FILE*, inst_t, ddg_t *ddg);
 
 inst_t instList; /* list of instructions found by parser */
+int last_cycle;
 
 int main(int argc, char **argv) {
     arglim = argv + argc;
@@ -53,7 +54,7 @@ void c_optimize() {
         return;
 
     if (verbose)
-        print_list(stdout, instList);
+        print_list(stdout, instList, &ddg);
 
     find_function(); /* remove extra instructions needed for simulation */
 
@@ -65,11 +66,13 @@ void c_optimize() {
 
     /* Find single basic block loops and perform Iterative Modulo Scheduling */
 
+    last_cycle = -1;
     cfg = generate_cfg();
     ddg = generate_ddg();
     calc_depth();
     inst_list = sort_by_depth();
-    cycle_schedule(inst_list, ddg, w);
+    cycle_schedule(inst_list, &ddg, w);
+    sort_by_cycle(&ddg, inst_list);
     
     if (flag_regalloc) {
         // perform register allocation
@@ -87,7 +90,7 @@ void c_optimize() {
     /************************************************************************/
     /************************************************************************/
 
-    print_list(fptr, instList); /* dump code to output file */
+    print_list(fptr, instList, &ddg); /* dump code to output file */
 
     codegen_exit(fptr);
     fclose(fptr); /* close file */
@@ -177,21 +180,33 @@ void print_op(FILE *fptr, struct operand op) {
     }
 }
 
-void print_inst(FILE* fptr, inst_t i) {
+void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
 #ifdef debug
     fprintf(fptr, "count = %d\t", i->count);
     fprintf(fptr, "depth = %d\t", i->depth);
-#endif    
+#endif   
+    
+    int current_cycle = ddg->schedule_time[i->count];
+    //printf("current cycle = %d\n", current_cycle);
+    //printf("last cycle = %d\n", last_cycle);
+        
+    if (current_cycle == last_cycle)
+        fprintf(fptr, " . ");
+    else if (last_cycle != -1)
+        fprintf(fptr, "\n");
     
     if (i->label) {
         fprintf(fptr, "%s:", i->label);
     }
 
+    if (current_cycle != last_cycle)
+        fprintf(fptr, "\t");
+    
     if (i->op == OP_BR) {
-        fprintf(fptr, "\t%s", opnames[i->op]);
+        fprintf(fptr, "%s", opnames[i->op]);
         print_cc(fptr, i->ccode);
     } else
-        fprintf(fptr, "\t%s ", opnames[i->op]);
+        fprintf(fptr, "%s ", opnames[i->op]);
 
     switch (i->op) {
 
@@ -237,12 +252,13 @@ void print_inst(FILE* fptr, inst_t i) {
         default:
             break;
     }
-    fprintf(fptr, "\n");
+    last_cycle = current_cycle;
+    //fprintf(fptr, "\n");
 }
 
-void print_list(FILE *fptr, inst_t head) {
+void print_list(FILE *fptr, inst_t head, ddg_t *ddg) {
     while (head) {
-        print_inst(fptr, head);
+        print_inst(fptr, head, ddg);
         head = head->next;
     }
 }
