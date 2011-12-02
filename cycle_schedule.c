@@ -71,10 +71,10 @@ inst_t *sort_by_depth() {
     for (i = min_index; i < count; i++) {
         swapped = 0;
         for (j = min_index; j < count - (i - min_index + 1); j++) {
-             if (inst_list[i + 1]->depth < inst_list[i]->depth) {
-                temp = inst_list[i];
-                inst_list[i] = inst_list[i + 1];
-                inst_list[i + 1] = temp;
+             if (inst_list[j + 1]->depth < inst_list[j]->depth) {
+                temp = inst_list[j];
+                inst_list[j] = inst_list[j + 1];
+                inst_list[j + 1] = temp;
                 swapped = 1;
             }
         }
@@ -86,6 +86,8 @@ inst_t *sort_by_depth() {
         inst_list[i]->next = inst_list[i + 1];
     }
     inst_list[max_index]->next = NULL;
+    
+    instList = inst_list[min_index];
     
     return inst_list;
 }
@@ -135,11 +137,11 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots) {
                 if (deps_met == 1 && used_slots < slots) { // 11
                     if (X->next != NULL) {
                         for (Y = X->next; Y->next != NULL; Y = Y->next) {
-                            if (ddg->flow_arc[Y->count][X->count] == 1)
+                            if (ddg->flow_arc[X->count][Y->count] == 1)
                                 ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + latency(X));
-                            else if (ddg->anti_arc[Y->count][X->count] == 1)
+                            else if (ddg->anti_arc[X->count][Y->count] == 1)
                                 ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle);
-                            else if (ddg->output_arc[Y->count][X->count] == 1)
+                            else if (ddg->output_arc[X->count][Y->count] == 1)
                                 ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + max(0, latency(X) - latency(Y) + 1));
                         }
                     }
@@ -150,6 +152,7 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots) {
                     total_removed++;
                     printf("%d\n", inst_list[k]->count);
 #endif
+                    
                     do {
                         inst_list[k] = inst_list[k + 1];
                         k++;

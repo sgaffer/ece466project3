@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     if (infile[0]) {
         c_optimize();
     }
-    
+
     return 0;
 }
 
@@ -42,9 +42,9 @@ void c_optimize() {
     FILE *fptr = fopen(outfile, "w");
     block_array cfg;
     ddg_t ddg;
-    int w = 4;
+    //int w = 4;
     inst_t *inst_list;
-    
+
     codegen_entry(fptr);
 
     yywrap();
@@ -72,8 +72,18 @@ void c_optimize() {
     calc_depth();
     inst_list = sort_by_depth();
     cycle_schedule(inst_list, &ddg, w);
+
+    /*inst_t list;
+    for (list = instList; list; list = list->next) {
+        if (list->label) 
+                printf("%s:\t", list->label);
+
+        printf("%d\n", list->depth);
+    }*/
+
     sort_by_cycle(&ddg, inst_list);
-    
+
+
     if (flag_regalloc) {
         // perform register allocation
         printf("Perform register allocation.\n"); // REMOVE ME
@@ -185,23 +195,23 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
     fprintf(fptr, "count = %d\t", i->count);
     fprintf(fptr, "depth = %d\t", i->depth);
 #endif   
-    
+
     int current_cycle = ddg->schedule_time[i->count];
     //printf("current cycle = %d\n", current_cycle);
     //printf("last cycle = %d\n", last_cycle);
-        
+
     if (current_cycle == last_cycle)
         fprintf(fptr, " . ");
     else if (last_cycle != -1)
         fprintf(fptr, "\n");
-    
+
     if (i->label) {
         fprintf(fptr, "%s:", i->label);
     }
 
     if (current_cycle != last_cycle)
         fprintf(fptr, "\t");
-    
+
     if (i->op == OP_BR) {
         fprintf(fptr, "%s", opnames[i->op]);
         print_cc(fptr, i->ccode);
