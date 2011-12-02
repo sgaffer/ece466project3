@@ -102,12 +102,13 @@ void cycle_schedule(inst_t *inst_list, ddg_t ddg, int slots) {
                     }
                     ddg.schedule_time[X->count] = cycle;
                     used_slots++;
-                    //inst_list[i] = NULL;
                     k = i;
+                    if (k != min_index)
+                        inst_list[k - 1]->next = inst_list[k]->next;
                     do {
-                        inst_list[k] = inst_list[k+1];
+                        inst_list[k] = inst_list[k + 1];
                         k++;
-                    } while (k != max_index);
+                    } while (k < max_index);
                     max_index--;
 #ifdef debug
                     total_removed++;
