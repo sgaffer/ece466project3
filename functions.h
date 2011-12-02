@@ -8,6 +8,8 @@
 #ifndef FUNCTIONS_H
 #define	FUNCTIONS_H
 
+#define debug true
+
 block_array generate_cfg();
 ddg_t generate_ddg();
 void calc_depth();

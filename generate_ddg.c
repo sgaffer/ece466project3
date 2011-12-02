@@ -56,6 +56,9 @@ ddg_t generate_ddg() {
             if (list->ops[j].t == op_reg) {
                 if (ddg.def_inst[list->ops[j].reg] != -1) {
                     ddg.flow_arc[ddg.def_inst[list->ops[j].reg]][list->count] = 1;
+#ifdef debug
+                    //printf("True dependency to %d from %d\n", ddg.def_inst[list->ops[j].reg], list->count);
+#endif
                 }
             }
         }

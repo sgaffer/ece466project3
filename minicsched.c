@@ -178,7 +178,10 @@ void print_op(FILE *fptr, struct operand op) {
 }
 
 void print_inst(FILE* fptr, inst_t i) {
-    //fprintf(fptr, "%d\t", i->depth);
+#ifdef debug
+    fprintf(fptr, "count = %d\t", i->count);
+    fprintf(fptr, "depth = %d\t", i->depth);
+#endif    
     
     if (i->label) {
         fprintf(fptr, "%s:", i->label);
