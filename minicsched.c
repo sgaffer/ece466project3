@@ -22,7 +22,6 @@ void print_list(FILE*, inst_t, ddg_t *ddg);
 inst_t instList; /* list of instructions found by parser */
 int last_cycle;
 int previous_type;
-inst_t branch;
 
 int main(int argc, char **argv) {
     arglim = argv + argc;
@@ -45,7 +44,9 @@ void c_optimize() {
     FILE *fptr = fopen(outfile, "w");
     block_array cfg;
     ddg_t ddg;
-    //int w = 2;
+#ifdef MULTIOP
+    int w = 2;
+#endif
     inst_t *inst_list;
     inst_t list;
     int min_index;
@@ -94,7 +95,7 @@ void c_optimize() {
     previous_type = -1;
     cfg = generate_cfg();
     ddg = generate_ddg();
-    
+   
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
     while (min_index < count) {
         max_index = min_index;
@@ -127,7 +128,7 @@ void c_optimize() {
     for (i = 0; i < count; ddg.schedule_time[i++] = -1);
     for (i = 0; i < count; ddg.ready_cycle[i++] = 0);
 
-/*
+#ifdef MULTIOP
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
     while (min_index < count) {
         max_index = min_index;
@@ -161,7 +162,7 @@ void c_optimize() {
         free(temp_list);
         min_index = max_index + 1;
     }
-*/
+#endif
 
     /*inst_t list;
     for (list = instList; list; list = list->next) {
@@ -294,7 +295,7 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
     //printf("last cycle = %d\n", last_cycle);
     printf("depth = %d\n", i->depth);
 
-/*
+#ifdef MULTIOP
     if (current_cycle == last_cycle) {
         fprintf(fptr, " . ");
         
@@ -304,16 +305,10 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
             fprintf(fptr, "\t\t");
     } 
     else if (last_cycle != -1)
-*/
+#endif
         fprintf(fptr, "\n");
-    
-    if (last_cycle != -1 && (current_cycle - last_cycle) > 1)
-        fprintf(fptr, "NOP\n");
 
     if (i->label) {
-        if (last_cycle != -1)
-            fprintf(fptr, "\n");
-        
         fprintf(fptr, "%s:", i->label);
     }
 
@@ -373,8 +368,63 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
 }
 
 void print_list(FILE *fptr, inst_t head, ddg_t *ddg) {
+    inst_t branch = NULL;
+    int max_latency = 1;
+    int curr_sched;
+    int prev_sched = 0;
+      
     while (head) {
-        print_inst(fptr, head, ddg);
+        
+        if (head->op == OP_LDR)
+            printf("over here\n");
+        
+        if (head->op == OP_RET)
+            printf("here\n");
+        
+        
+        curr_sched = ddg->schedule_time[head->count];
+        
+        if (curr_sched == prev_sched)
+            max_latency = max(latency(head), max_latency);
+        else if (head->op == OP_RET) {
+            while (max_latency != 1) {
+                fprintf(fptr, "\n\tNOP");
+                max_latency--;
+            }
+        }
+        else {
+            max_latency = latency(head);
+        }
+        
+        if (head->op == OP_BRA) {
+            branch = head;
+            if (head->next != NULL)
+                head = head->next;
+        }
+
+        if (branch) {
+            if (head->next == NULL) {
+                print_inst(fptr, branch, ddg);
+                branch = NULL;
+            }
+            else if (head->label) {
+                print_inst(fptr, branch, ddg);
+                print_inst(fptr, head, ddg);
+                branch = NULL;
+            }
+        }
+        else
+            print_inst(fptr, head, ddg);
+
+        prev_sched = ddg->schedule_time[head->count];
+        
+/*
+        if (head->next != NULL) {
+            if (head->next->op != OP_RET)
+                max_latency = latency(head->next);
+        }
+*/
+        
         head = head->next;
     }
     fprintf(fptr, "\n");
