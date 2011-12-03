@@ -76,22 +76,11 @@ void sort_by_cycle(ddg_t *ddg, inst_t *inst_list) {
     return;
 }
 
-inst_t *sort_by_depth() {
-    inst_t *inst_list;
-    inst_t list = instList;
+void sort_by_depth(inst_t *inst_list) {      // pass ENTIRE list to this function
     inst_t temp;
     int i, j, min_index, max_index;
     int swapped = 1;
     int block_end, block_start;
-
-    inst_list = (inst_t*) malloc(count * sizeof (inst_t));
-
-    for (i = 0; i < count; inst_list[i++] = NULL); // initialize list of instructions to NULL
-
-    while (list) {
-        inst_list[list->count] = list;
-        list = list->next;
-    }
 
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
     max_index = count - 1;
@@ -135,8 +124,19 @@ inst_t *sort_by_depth() {
     inst_list[max_index]->next = NULL;
 
     instList = inst_list[min_index];
-
-    return inst_list;
+    
+        for (i = min_index; i <= max_index; i++) {
+        if (inst_list[i]->label)
+            printf("%s\n", inst_list[i]->label);
+        printf("%d with depth = %d", inst_list[i]->op, inst_list[i]->depth);
+        if (inst_list[i]->op == OP_BRA)
+            printf(" branch here!\n");
+        else
+            printf("\n");
+    }
+    
+    
+    return;
 }
 
 void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int max_index) {
@@ -147,19 +147,22 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
     int deps_met = 0;
     int used_slots = 0;
     int ops_in_list = 1;
-
+    
     cycle = 0; // 4
     while (ops_in_list != 0) { // 5
         for (i = min_index; i <= max_index; i++) { // 7
             X = inst_list[i]; // 9
-            printf("X ready cycle = %d\n", ddg->ready_cycle[X->count]);
+            //printf("X ready cycle = %d\n", ddg->ready_cycle[X->count]);
             if (ddg->ready_cycle[X->count] <= cycle) {
-                for (j = i; j <= max_index; j++) {
+                for (j = min_index; j <= max_index; j++) {
                     Z = inst_list[j];
                     if (ddg->flow_arc[Z->count][X->count] == 1) {
                         deps_met = 0;
                         break;
                     } else if (ddg->output_arc[Z->count][X->count] == 1) {
+                        deps_met = 0;
+                        break;
+                    } else if (ddg->anti_arc[Z->count][X->count] == 1) {
                         deps_met = 0;
                         break;
                     } else
@@ -168,7 +171,7 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
                 if (deps_met == 1 && used_slots < slots) { // 11
                     if (i < max_index) {
                         k = i + 1;
-                        for (Y = inst_list[k]; k <= max_index; Y = inst_list[++k]) {
+                        for (Y = inst_list[k]; k < max_index; Y = inst_list[++k]) {
                             if (ddg->flow_arc[X->count][Y->count] == 1) // 15
                                 ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + latency(X)); // 16
                             else if (ddg->anti_arc[X->count][Y->count] == 1) // 17
@@ -176,7 +179,7 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
                             else if (ddg->output_arc[X->count][Y->count] == 1) // 19
                                 ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + max(0, latency(X) - latency(Y) + 1)); // 20 
                         }
-                        printf("Y ready cycle = %d\n", ddg->ready_cycle[Y->count]);
+                        //printf("Y ready cycle = %d\n", ddg->ready_cycle[Y->count]);
 
                     }
                     ddg->schedule_time[X->count] = cycle; // 23
@@ -188,6 +191,7 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
                         k++;
                     } while (k < max_index);
                     max_index--; // list is one unit smaller now
+                    i--;
                 }
             }
         }

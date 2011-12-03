@@ -21,6 +21,8 @@ void print_list(FILE*, inst_t, ddg_t *ddg);
 
 inst_t instList; /* list of instructions found by parser */
 int last_cycle;
+int previous_type;
+inst_t branch;
 
 int main(int argc, char **argv) {
     arglim = argv + argc;
@@ -43,7 +45,7 @@ void c_optimize() {
     FILE *fptr = fopen(outfile, "w");
     block_array cfg;
     ddg_t ddg;
-    int w = 2;
+    //int w = 2;
     inst_t *inst_list;
     inst_t list;
     int min_index;
@@ -77,21 +79,23 @@ void c_optimize() {
     for (list = instList; list->op != OP_RET; list=list->next);
     count = list->count + 1;
     
+    list = instList;
+    
+    inst_list = (inst_t*) malloc(count * sizeof (inst_t));
+
+    for (i = 0; i < count; inst_list[i++] = NULL); // initialize list of instructions to NULL
+
+    while (list) {
+        inst_list[list->count] = list;
+        list = list->next;
+    }
+    
     last_cycle = -1;
+    previous_type = -1;
     cfg = generate_cfg();
     ddg = generate_ddg();
-    calc_depth();
-    inst_list = sort_by_depth();
-
-    ddg.ready_cycle = (int *) malloc(count * sizeof (int));
-    ddg.schedule_time = (int *) malloc(count * sizeof (int));
-
-    for (i = 0; i < count; ddg.schedule_time[i++] = -1);
-    for (i = 0; i < count; ddg.ready_cycle[i++] = 0);
-
+    
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
-
-
     while (min_index < count) {
         max_index = min_index;
         while (inst_list[max_index] != NULL) {
@@ -110,10 +114,54 @@ void c_optimize() {
             temp_list[i] = inst_list[min_index + i];
         }
 
+        calc_depth(temp_list, 0, length - 1);
+        free(temp_list);
+        min_index = max_index + 1;
+    }
+    
+    sort_by_depth(inst_list);
+
+    ddg.ready_cycle = (int *) malloc(count * sizeof (int));
+    ddg.schedule_time = (int *) malloc(count * sizeof (int));
+
+    for (i = 0; i < count; ddg.schedule_time[i++] = -1);
+    for (i = 0; i < count; ddg.ready_cycle[i++] = 0);
+
+/*
+    for (min_index = 0; inst_list[min_index] == NULL; min_index++);
+    while (min_index < count) {
+        max_index = min_index;
+        while (inst_list[max_index] != NULL) {
+            if (inst_list[max_index]->next != NULL) {
+                if (inst_list[max_index]->next->label)
+                    break;
+            } else
+                break;
+
+            max_index++;
+        }
+        length = max_index - min_index + 1;
+
+        temp_list = (inst_t*) malloc(length * sizeof (inst_t));
+        for (i = 0; i < length; i++) {
+            temp_list[i] = inst_list[min_index + i];
+        }
+        
+            for (i = 0; i <= length-1; i++) {
+        if (temp_list[i]->label)
+            printf("%s\n", temp_list[i]->label);
+        printf("%d", temp_list[i]->op);
+        if (temp_list[i]->op == OP_BRA)
+            printf(" branch here!\n");
+        else
+            printf("\n");
+    }
+
         cycle_schedule(temp_list, &ddg, w, 0, length - 1);
         free(temp_list);
         min_index = max_index + 1;
     }
+*/
 
     /*inst_t list;
     for (list = instList; list; list = list->next) {
@@ -239,13 +287,28 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
 #endif   
 
     int current_cycle = ddg->schedule_time[i->count];
+    
+    if (i->label)
+        printf("%s\n", i->label);
     //printf("current cycle = %d\n", current_cycle);
     //printf("last cycle = %d\n", last_cycle);
+    printf("depth = %d\n", i->depth);
 
-    if (current_cycle == last_cycle)
+/*
+    if (current_cycle == last_cycle) {
         fprintf(fptr, " . ");
+        
+        if (previous_type == OP_BR || previous_type == OP_SET)
+            fprintf(fptr, "\t");
+        else if (previous_type == OP_OUT || previous_type == OP_IN)
+            fprintf(fptr, "\t\t");
+    } 
     else if (last_cycle != -1)
+*/
         fprintf(fptr, "\n");
+    
+    if (last_cycle != -1 && (current_cycle - last_cycle) > 1)
+        fprintf(fptr, "NOP\n");
 
     if (i->label) {
         if (last_cycle != -1)
@@ -305,13 +368,13 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
             break;
     }
     last_cycle = current_cycle;
+    previous_type = i->op;
     //fprintf(fptr, "\n");
 }
 
 void print_list(FILE *fptr, inst_t head, ddg_t *ddg) {
     while (head) {
         print_inst(fptr, head, ddg);
-        //fprintf(fptr, "\n");
         head = head->next;
     }
     fprintf(fptr, "\n");

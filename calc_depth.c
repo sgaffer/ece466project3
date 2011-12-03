@@ -38,49 +38,67 @@ int latency(inst_t list) {
         return 1;
 }
 
-void calc_depth() {
+void calc_depth(inst_t *inst_list, int min_index, int max_index) {
 
     int MAX_REGS;
     int *latest_use_time, *completion_time;
-    inst_t list = instList;
     int t, j;
+    int i;
+    int max_depth = 0;
     
     MAX_REGS = number_of_registers();
 
     latest_use_time = (int *) malloc(MAX_REGS * sizeof (int));
     completion_time = (int *) malloc(MAX_REGS * sizeof (int));
+    
+    for (i = 0; i < MAX_REGS; i++) {
+        latest_use_time[i] = 0;
+        completion_time[i] = 0;
+    }
 
-    while (list) {
-        if (list->ops[0].t == op_reg) {
-            t = max(1, latest_use_time[list->ops[0].reg] - latency(list) + 1);
+    while (min_index <= max_index) {
+        if (inst_list[min_index]->ops[0].t == op_reg) {
+            t = max(1, latest_use_time[inst_list[min_index]->ops[0].reg] - latency(inst_list[min_index]) + 1);
         }
         for (j = 1; j <= 2; j++) {
-            if (list->ops[j].t == op_reg) {
-                t = max(t, completion_time[list->ops[j].reg]);
+            if (inst_list[min_index]->ops[j].t == op_reg) {
+                t = max(t, completion_time[inst_list[min_index]->ops[j].reg]);
             }
         }
-        if (list->ops[0].t == op_reg) {
-            t = max(t, completion_time[list->ops[0].reg] - latency(list));
+        if (inst_list[min_index]->ops[0].t == op_reg) {
+            t = max(t, completion_time[inst_list[min_index]->ops[0].reg] - latency(inst_list[min_index]));
         }
-        if (list->ops[0].t == op_reg) {
-            completion_time[list->ops[0].reg] = t + latency(list);
+        if (inst_list[min_index]->ops[0].t == op_reg) {
+            completion_time[inst_list[min_index]->ops[0].reg] = t + latency(inst_list[min_index]);
         }
         for (j = 1; j <= 2; j++) {
-            if (list->ops[j].t == op_reg) {
-                latest_use_time[list->ops[j].reg] = max(latest_use_time[list->ops[j].reg], t);
+            if (inst_list[min_index]->ops[j].t == op_reg) {
+                latest_use_time[inst_list[min_index]->ops[j].reg] = max(latest_use_time[inst_list[min_index]->ops[j].reg], t);
             }
         }
-        list->depth = t;
-
-        list = list->next;
+        inst_list[min_index]->depth = t;
+        max_depth = max(max_depth, t);
+        
+        min_index++;
     }
     
-    list = instList;
+    if (inst_list[max_index]->op == OP_BRA) {
+        inst_list[max_index]->depth = max_depth;
+    }
     
-    /*while (list) {
+/*
+    inst_t list = instList;
+    
+    while (list) {
+        if (list->label)
+            printf("%s\n", list->label);
         printf("count = %d, depth = %d\n", list->count, list->depth);
         list = list->next;
-    }*/
+    }
+*/
+    
+    free(latest_use_time);
+    free(completion_time);
     
     return;
 }
