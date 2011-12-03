@@ -14,6 +14,7 @@ void sort_by_cycle(ddg_t *ddg, inst_t *inst_list) {
     inst_t temp;
     int i, j, min_index, max_index;
     int swapped = 1;
+    int block; int block_start;
 
     while (list) {
         inst_list[list->count] = list;
@@ -21,31 +22,56 @@ void sort_by_cycle(ddg_t *ddg, inst_t *inst_list) {
     }
 
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
-    max_index = count-1;
-    
-    j = 1;
-    
-    for (i = min_index; i < count; i++) {
-        swapped = 0;
-        for (j = min_index; j < count - (i - min_index + 1); j++) {
-             if (ddg->schedule_time[inst_list[j + 1]->count] < ddg->schedule_time[inst_list[j]->count]) {
-                temp = inst_list[j];
-                inst_list[j] = inst_list[j + 1];
-                inst_list[j + 1] = temp;
-                swapped = 1;
-             }
+    max_index = count - 1;
+
+    block = min_index + 1;
+    block_start = min_index;
+    while (block <= count) {
+        if (block != count)
+            do {
+                if (inst_list[block]->label != NULL)
+                    break;
+                block++;
+            } while (block != count);
+        for (i = block_start; i < block; i++) {
+            swapped = 0;
+            for (j = block_start; j < block - (i - block_start + 1); j++) {
+                if (ddg->schedule_time[inst_list[j + 1]->count] < ddg->schedule_time[inst_list[j]->count]) {
+                    if (inst_list[j + 1]->label) {
+                        inst_list[j]->label = inst_list[j + 1]->label;
+                        inst_list[j + 1]->label = NULL;
+                    } else if (inst_list[j]->label) {
+                        inst_list[j + 1]->label = inst_list[j]->label;
+                        inst_list[j]->label = NULL;
+                    }
+                    temp = inst_list[j];
+                    inst_list[j] = inst_list[j + 1];
+                    inst_list[j + 1] = temp;
+                    swapped = 1;
+                }
+            }
+            if (!swapped)
+                break;
         }
-        if (!swapped)
-            break;
+        block_start = block;
+        block++;
     }
 
     for (i = min_index; i < max_index; i++) {
         inst_list[i]->next = inst_list[i + 1];
     }
     inst_list[max_index]->next = NULL;
-    
+
     instList = inst_list[min_index];
     
+        list = instList;
+    while (list) {
+        if (list->label)
+            printf("%s ", list->label);
+        printf("%d\n", ddg->schedule_time[list->count]);
+        list = list->next;
+    }
+
     return;
 }
 
@@ -55,7 +81,8 @@ inst_t *sort_by_depth() {
     inst_t temp;
     int i, j, min_index, max_index;
     int swapped = 1;
-    
+    int block, block_start;
+
     inst_list = (inst_t*) malloc(count * sizeof (inst_t));
 
     for (i = 0; i < count; inst_list[i++] = NULL); // initialize list of instructions to NULL
@@ -67,28 +94,47 @@ inst_t *sort_by_depth() {
 
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
     max_index = count - 1;
-    
-    for (i = min_index; i < count; i++) {
-        swapped = 0;
-        for (j = min_index; j < count - (i - min_index + 1); j++) {
-             if (inst_list[j + 1]->depth < inst_list[j]->depth) {
-                temp = inst_list[j];
-                inst_list[j] = inst_list[j + 1];
-                inst_list[j + 1] = temp;
-                swapped = 1;
+    block = min_index + 1;
+    block_start = min_index;
+
+    while (block <= count) {
+        if (block != count)
+            do {
+                if (inst_list[block]->label != NULL)
+                    break;
+                block++;
+            } while (block != count);
+        for (i = block_start; i < block; i++) {
+            swapped = 0;
+            for (j = block_start; j < block - (i - block_start + 1); j++) {
+                if (inst_list[j + 1]->depth < inst_list[j]->depth) {
+                    if (inst_list[j + 1]->label) {
+                        inst_list[j]->label = inst_list[j + 1]->label;
+                        inst_list[j + 1]->label = NULL;
+                    } else if (inst_list[j]->label) {
+                        inst_list[j + 1]->label = inst_list[j]->label;
+                        inst_list[j]->label = NULL;
+                    }
+                    temp = inst_list[j];
+                    inst_list[j] = inst_list[j + 1];
+                    inst_list[j + 1] = temp;
+                    swapped = 1;
+                }
             }
+            if (!swapped)
+                break;
         }
-        if (!swapped)
-            break;
+        block_start = block;
+        block++;
     }
 
     for (i = min_index; i < max_index; i++) {
         inst_list[i]->next = inst_list[i + 1];
     }
     inst_list[max_index]->next = NULL;
-    
+
     instList = inst_list[min_index];
-    
+
     return inst_list;
 }
 
@@ -152,7 +198,7 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots) {
                     total_removed++;
                     printf("%d\n", inst_list[k]->count);
 #endif
-                    
+
                     do {
                         inst_list[k] = inst_list[k + 1];
                         k++;
