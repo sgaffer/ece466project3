@@ -152,6 +152,7 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
     while (ops_in_list != 0) { // 5
         for (i = min_index; i <= max_index; i++) { // 7
             X = inst_list[i]; // 9
+            printf("X ready cycle = %d\n", ddg->ready_cycle[X->count]);
             if (ddg->ready_cycle[X->count] <= cycle) {
                 for (j = i; j <= max_index; j++) {
                     Z = inst_list[j];
@@ -175,6 +176,8 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
                             else if (ddg->output_arc[X->count][Y->count] == 1) // 19
                                 ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + max(0, latency(X) - latency(Y) + 1)); // 20 
                         }
+                        printf("Y ready cycle = %d\n", ddg->ready_cycle[Y->count]);
+
                     }
                     ddg->schedule_time[X->count] = cycle; // 23
                     used_slots++; // resource used
