@@ -45,6 +45,7 @@ void c_optimize() {
     ddg_t ddg;
     //int w = 2;
     inst_t *inst_list;
+    inst_t list;
     int min_index;
     //int max_index, length;
     //inst_t *temp_list;
@@ -71,7 +72,11 @@ void c_optimize() {
 
     /* Find single basic block loops and perform Iterative Modulo Scheduling */
 
-    count--; // decrement counter for .opt files
+    //count--; // decrement counter for .opt files
+    
+    for (list = instList; list->op != OP_RET; list=list->next);
+    count = list->count + 1;
+    
     last_cycle = -1;
     cfg = generate_cfg();
     ddg = generate_ddg();
@@ -93,10 +98,9 @@ void c_optimize() {
             if (inst_list[max_index]->next != NULL) {
                 if (inst_list[max_index]->next->label)
                     break;
-            }
-            else
+            } else
                 break;
-            
+
             max_index++;
         }
         length = max_index - min_index + 1;
@@ -111,6 +115,7 @@ void c_optimize() {
         min_index = max_index + 1;
     }
 */
+
 
     /*inst_t list;
     for (list = instList; list; list = list->next) {

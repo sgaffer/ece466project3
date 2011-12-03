@@ -82,7 +82,7 @@ inst_t *sort_by_depth() {
     inst_t temp;
     int i, j, min_index, max_index;
     int swapped = 1;
-    int block, block_start;
+    int block_end, block_start;
 
     inst_list = (inst_t*) malloc(count * sizeof (inst_t));
 
@@ -95,19 +95,19 @@ inst_t *sort_by_depth() {
 
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
     max_index = count - 1;
-    block = min_index + 1;
+    block_end = min_index + 1;
     block_start = min_index;
 
-    while (block <= count) {
-        if (block != count)
+    while (block_end <= count) {
+        if (block_end != count)
             do {
-                if (inst_list[block]->label != NULL)
+                if (inst_list[block_end]->label != NULL)
                     break;
-                block++;
-            } while (block != count);
-        for (i = block_start; i < block; i++) {
+                block_end++;
+            } while (block_end != count);
+        for (i = block_start; i < block_end; i++) {
             swapped = 0;
-            for (j = block_start; j < block - (i - block_start + 1); j++) {
+            for (j = block_start; j < block_end - (i - block_start + 1); j++) {
                 if (inst_list[j + 1]->depth < inst_list[j]->depth) {
                     if (inst_list[j + 1]->label) {
                         inst_list[j]->label = inst_list[j + 1]->label;
@@ -125,8 +125,8 @@ inst_t *sort_by_depth() {
             if (!swapped)
                 break;
         }
-        block_start = block;
-        block++;
+        block_start = block_end;
+        block_end++;
     }
 
     for (i = min_index; i < max_index; i++) {
