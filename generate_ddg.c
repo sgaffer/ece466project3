@@ -51,10 +51,17 @@ ddg_t generate_ddg() {
     }
 
     while (list) {
-        for (j = 1; j <= 2; j++) {
+        for (j = 1; j <= 2; j++) { // reads from ops[1] & ops[2] for all but STR
             if (list->ops[j].t == op_reg) {
                 if (ddg.def_inst[list->ops[j].reg] != -1) {
                     ddg.flow_arc[ddg.def_inst[list->ops[j].reg]][list->count] = 1;
+                }
+            }
+        }
+        if (list->op == OP_STR || list->op == OP_BR) { // STR reads from ops[0] too
+            if (list->ops[0].t == op_reg) {
+                if (ddg.def_inst[list->ops[0].reg] != -1) {
+                    ddg.flow_arc[ddg.def_inst[list->ops[0].reg]][list->count] = 1;
                 }
             }
         }
@@ -72,7 +79,7 @@ ddg_t generate_ddg() {
                 }
             }
         }
-        if (list->ops[0].t == op_reg) {
+        if (list->ops[0].t == op_reg && list->op != OP_STR && list->op != OP_BR) {
             if (ddg.def_inst[list->ops[0].reg] != -1) {
                 ddg.output_arc[ddg.def_inst[list->ops[0].reg]][list->count] = 1;
             }
@@ -87,7 +94,7 @@ ddg_t generate_ddg() {
                 }
             }
         }
-        if (list->ops[0].t == op_reg) {
+        if (list->ops[0].t == op_reg && list->op != OP_STR && list->op != OP_BR) {
             for (temp = &ddg.use_inst[list->ops[0].reg]; temp->next != NULL; temp = temp->next) {
                 if (temp->instr != -1)
                     ddg.anti_arc[temp->instr][list->count] = 1;
@@ -114,6 +121,13 @@ ddg_t generate_ddg() {
                 temp->next->prev = temp;
             }
         }
+        if (list->op == OP_STR || list->op == OP_BR) { // STR reads from ops[0] too
+            for (temp = &ddg.use_inst[list->ops[0].reg]; temp->next != NULL; temp = temp->next);
+                temp->next = (instr_set *) malloc(sizeof (instr_set));
+                temp->next->instr = list->ops[0].reg;
+                temp->next->next = NULL;
+                temp->next->prev = temp;
+        }
         if (list->op == OP_OUT) { // reads from R0
             for (temp = &ddg.use_inst[0]; temp->next != NULL; temp = temp->next);
             temp->next = (instr_set *) malloc(sizeof (instr_set));
@@ -130,7 +144,7 @@ ddg_t generate_ddg() {
                 temp->next->prev = temp;
             }
         }
-        if (list->ops[0].t == op_reg) {
+        if (list->ops[0].t == op_reg && list->op != OP_STR && list->op != OP_BR) {
             if (ddg.use_inst[list->ops[0].reg].next != NULL) {
                 for (temp = &ddg.use_inst[list->ops[0].reg]; temp->next != NULL; temp = temp->next);
                 do {

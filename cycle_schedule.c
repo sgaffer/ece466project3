@@ -125,6 +125,7 @@ void sort_by_depth(inst_t *inst_list) {      // pass ENTIRE list to this functio
 
     instList = inst_list[min_index];
     
+#ifdef debug
         for (i = min_index; i <= max_index; i++) {
         if (inst_list[i]->label)
             printf("%s\n", inst_list[i]->label);
@@ -134,7 +135,7 @@ void sort_by_depth(inst_t *inst_list) {      // pass ENTIRE list to this functio
         else
             printf("\n");
     }
-    
+#endif
     
     return;
 }
@@ -185,7 +186,8 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
                     ddg->schedule_time[X->count] = cycle; // 23
                     used_slots++; // resource used
                     k = i; // k is current instruction's position on list
-
+                    if (inst_list[k]->op == OP_IN || inst_list[k]->op == OP_BR)
+                        cycle++;
                     do { // shift entire list down to delete instruction
                         inst_list[k] = inst_list[k + 1];
                         k++;

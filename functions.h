@@ -9,7 +9,7 @@
 #define	FUNCTIONS_H
 
 //#define debug true
-//#define MULTIOP true
+#define MULTIOP true
 
 block_array generate_cfg();
 ddg_t generate_ddg();
