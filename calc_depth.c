@@ -74,4 +74,13 @@ void calc_depth() {
 
         list = list->next;
     }
+    
+    list = instList;
+    
+    /*while (list) {
+        printf("count = %d, depth = %d\n", list->count, list->depth);
+        list = list->next;
+    }*/
+    
+    return;
 }

@@ -32,5 +32,4 @@ L1:	ADD R6, R6, #221
 	ADD R6, R6, #1
 	LDR R7, R6, #0
 	ADD R6, R6, #1
-	RET 
 	.END

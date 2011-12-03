@@ -10,6 +10,7 @@ extern int yyerror();
 extern int yywrap();
 extern int yyparse();
 extern int cmdlex();
+extern int count;
 
 void c_optimize(void);
 void codegen_entry(FILE *fptr);
@@ -42,8 +43,12 @@ void c_optimize() {
     FILE *fptr = fopen(outfile, "w");
     block_array cfg;
     ddg_t ddg;
-    //int w = 4;
+    //int w = 2;
     inst_t *inst_list;
+    int min_index;
+    //int max_index, length;
+    //inst_t *temp_list;
+    int i;
 
     codegen_entry(fptr);
 
@@ -66,12 +71,46 @@ void c_optimize() {
 
     /* Find single basic block loops and perform Iterative Modulo Scheduling */
 
+    count--; // decrement counter for .opt files
     last_cycle = -1;
     cfg = generate_cfg();
     ddg = generate_ddg();
     calc_depth();
     inst_list = sort_by_depth();
-    cycle_schedule(inst_list, &ddg, w);
+
+    ddg.ready_cycle = (int *) malloc(count * sizeof (int));
+    ddg.schedule_time = (int *) malloc(count * sizeof (int));
+
+    for (i = 0; i < count; ddg.schedule_time[i++] = -1);
+    for (i = 0; i < count; ddg.ready_cycle[i++] = 0);
+
+    for (min_index = 0; inst_list[min_index] == NULL; min_index++);
+
+/*
+    while (min_index < count) {
+        max_index = min_index;
+        while (inst_list[max_index] != NULL) {
+            if (inst_list[max_index]->next != NULL) {
+                if (inst_list[max_index]->next->label)
+                    break;
+            }
+            else
+                break;
+            
+            max_index++;
+        }
+        length = max_index - min_index + 1;
+
+        temp_list = (inst_t*) malloc(length * sizeof (inst_t));
+        for (i = 0; i < length; i++) {
+            temp_list[i] = inst_list[min_index + i];
+        }
+
+        cycle_schedule(temp_list, &ddg, w, 0, length - 1);
+        free(temp_list);
+        min_index = max_index + 1;
+    }
+*/
 
     /*inst_t list;
     for (list = instList; list; list = list->next) {
@@ -200,23 +239,20 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
     //printf("current cycle = %d\n", current_cycle);
     //printf("last cycle = %d\n", last_cycle);
 
-    if (current_cycle == last_cycle)
+    /*if (current_cycle == last_cycle)
         fprintf(fptr, " . ");
     else if (last_cycle != -1)
         fprintf(fptr, "\n");
-
+*/
     if (i->label) {
         fprintf(fptr, "%s:", i->label);
     }
 
-    if (current_cycle != last_cycle)
-        fprintf(fptr, "\t");
-
     if (i->op == OP_BR) {
-        fprintf(fptr, "%s", opnames[i->op]);
+        fprintf(fptr, "\t%s", opnames[i->op]);
         print_cc(fptr, i->ccode);
     } else
-        fprintf(fptr, "%s ", opnames[i->op]);
+        fprintf(fptr, "\t%s ", opnames[i->op]);
 
     switch (i->op) {
 
@@ -269,6 +305,7 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
 void print_list(FILE *fptr, inst_t head, ddg_t *ddg) {
     while (head) {
         print_inst(fptr, head, ddg);
+        fprintf(fptr, "\n");
         head = head->next;
     }
 }
