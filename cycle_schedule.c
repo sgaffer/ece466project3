@@ -143,7 +143,7 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
 
     int cycle;
     int i, j, k;
-    inst_t X, Y;
+    inst_t X, Y, Z;
     int deps_met = 0;
     int used_slots = 0;
     int ops_in_list = 1;
@@ -153,39 +153,38 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
         for (i = min_index; i <= max_index; i++) { // 7
             X = inst_list[i]; // 9
             if (ddg->ready_cycle[X->count] <= cycle) {
-                for (j = min_index; j <= max_index; j++) {
-                    if (ddg->flow_arc[X->count][inst_list[j]->count] == 1) {
+                for (j = i; j <= max_index; j++) {
+                    Z = inst_list[j];
+                    if (ddg->flow_arc[Z->count][X->count] == 1) {
                         deps_met = 0;
                         break;
-                    } else if (ddg->output_arc[X->count][inst_list[j]->count] == 1) {
+                    } else if (ddg->output_arc[Z->count][X->count] == 1) {
                         deps_met = 0;
                         break;
                     } else
                         deps_met = 1;
                 }
                 if (deps_met == 1 && used_slots < slots) { // 11
-                    if (X->next != NULL) {
-                        for (Y = X->next; Y->next != NULL; Y = Y->next) {
-                            if (Y->next->label == NULL) {
-                                if (ddg->flow_arc[X->count][Y->count] == 1)
-                                    ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + latency(X));
-                                else if (ddg->anti_arc[X->count][Y->count] == 1)
-                                    ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle);
-                                else if (ddg->output_arc[X->count][Y->count] == 1)
-                                    ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + max(0, latency(X) - latency(Y) + 1));
-                            } else
-                                break;
+                    if (i < max_index) {
+                        k = i + 1;
+                        for (Y = inst_list[k]; k <= max_index; Y = inst_list[++k]) {
+                            if (ddg->flow_arc[X->count][Y->count] == 1) // 15
+                                ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + latency(X)); // 16
+                            else if (ddg->anti_arc[X->count][Y->count] == 1) // 17
+                                ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle); // 18
+                            else if (ddg->output_arc[X->count][Y->count] == 1) // 19
+                                ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + max(0, latency(X) - latency(Y) + 1)); // 20 
                         }
                     }
-                    ddg->schedule_time[X->count] = cycle;
-                    used_slots++;
-                    k = i;
+                    ddg->schedule_time[X->count] = cycle; // 23
+                    used_slots++; // resource used
+                    k = i; // k is current instruction's position on list
 
-                    do {
+                    do { // shift entire list down to delete instruction
                         inst_list[k] = inst_list[k + 1];
                         k++;
                     } while (k < max_index);
-                    max_index--;
+                    max_index--; // list is one unit smaller now
                 }
             }
         }

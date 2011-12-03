@@ -49,21 +49,18 @@ ddg_t generate_ddg() {
         }
     }
 
-
-
     while (list) {
         for (j = 1; j <= 2; j++) {
             if (list->ops[j].t == op_reg) {
                 if (ddg.def_inst[list->ops[j].reg] != -1) {
                     ddg.flow_arc[ddg.def_inst[list->ops[j].reg]][list->count] = 1;
-#ifdef debug
-                    //printf("True dependency to %d from %d\n", ddg.def_inst[list->ops[j].reg], list->count);
-#endif
                 }
             }
         }
-        if (list->ops[0].t == op_reg && ddg.def_inst[list->ops[0].reg] != -1) {
-            ddg.output_arc[ddg.def_inst[list->ops[0].reg]][list->count] = 1;
+        if (list->ops[0].t == op_reg) {
+            if (ddg.def_inst[list->ops[0].reg] != -1) {
+                ddg.output_arc[ddg.def_inst[list->ops[0].reg]][list->count] = 1;
+            }
         }
         if (list->ops[0].t == op_reg) {
             for (temp = &ddg.use_inst[list->ops[0].reg]; temp->next != NULL; temp = temp->next) {

@@ -43,12 +43,12 @@ void c_optimize() {
     FILE *fptr = fopen(outfile, "w");
     block_array cfg;
     ddg_t ddg;
-    //int w = 2;
+    int w = 2;
     inst_t *inst_list;
     inst_t list;
     int min_index;
-    //int max_index, length;
-    //inst_t *temp_list;
+    int max_index, length;
+    inst_t *temp_list;
     int i;
 
     codegen_entry(fptr);
@@ -91,7 +91,7 @@ void c_optimize() {
 
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
 
-/*
+
     while (min_index < count) {
         max_index = min_index;
         while (inst_list[max_index] != NULL) {
@@ -114,8 +114,6 @@ void c_optimize() {
         free(temp_list);
         min_index = max_index + 1;
     }
-*/
-
 
     /*inst_t list;
     for (list = instList; list; list = list->next) {
@@ -244,12 +242,15 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
     //printf("current cycle = %d\n", current_cycle);
     //printf("last cycle = %d\n", last_cycle);
 
-    /*if (current_cycle == last_cycle)
+    if (current_cycle == last_cycle)
         fprintf(fptr, " . ");
     else if (last_cycle != -1)
         fprintf(fptr, "\n");
-*/
+
     if (i->label) {
+        if (last_cycle != -1)
+            fprintf(fptr, "\n");
+        
         fprintf(fptr, "%s:", i->label);
     }
 
@@ -310,7 +311,8 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
 void print_list(FILE *fptr, inst_t head, ddg_t *ddg) {
     while (head) {
         print_inst(fptr, head, ddg);
-        fprintf(fptr, "\n");
+        //fprintf(fptr, "\n");
         head = head->next;
     }
+    fprintf(fptr, "\n");
 }
