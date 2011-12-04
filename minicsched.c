@@ -400,10 +400,12 @@ void print_list(FILE *fptr, inst_t head, ddg_t *ddg) {
 
     while (head) {
 
+#ifdef debug
         if (head->label)
             printf("%s\n", head->label);
         printf("%d\n", ddg->schedule_time[head->count]);
-        
+#endif
+       
         curr_sched = ddg->schedule_time[head->count];
 
         if (curr_sched == prev_sched)
