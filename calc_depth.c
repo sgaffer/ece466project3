@@ -106,18 +106,7 @@ void calc_depth(inst_t *inst_list, int min_index, int max_index) {
     if (inst_list[max_index]->op == OP_BRA) {
         inst_list[max_index]->depth = max_depth;
     }
-
-    /*
-        inst_t list = instList;
     
-        while (list) {
-            if (list->label)
-                printf("%s\n", list->label);
-            printf("count = %d, depth = %d\n", list->count, list->depth);
-            list = list->next;
-        }
-     */
-
     free(latest_use_time);
     free(completion_time);
 

@@ -7,8 +7,9 @@
   int verbose=0;
   char *outfile=NULL;
   int k=10;
-  int w=4;
-
+  //int w=4;
+  int w = 2;
+  
   int flag_regalloc=0;
   int flag_sched=0;
   int flag_sched_first=0;

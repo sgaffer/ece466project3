@@ -19,7 +19,8 @@
 			ADD     R50   , R0    , #0
 		L2: ADD     R18   , R5    , #-3   
             ADD     R19   , R5    , #-4   
-            STR     R18   , R19   , #0    
+            STR     R18   , R19   , #0 
+            BRn             R19         , L1
             SET     R20   , #0           
             STR     R20   , R5    , #3    
             BRA     L1                    

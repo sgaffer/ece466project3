@@ -44,15 +44,16 @@ void c_optimize() {
     FILE *fptr = fopen(outfile, "w");
     block_array cfg;
     ddg_t ddg;
-#ifdef MULTIOP
-    int w = 2;
-#endif
     inst_t *inst_list;
     inst_t list;
     int min_index;
     int max_index, length;
     inst_t *temp_list;
     int i;
+#ifdef MULTIOP
+    int offset = 0;
+    int max_cycle;
+#endif
 
     codegen_entry(fptr);
 
@@ -101,7 +102,7 @@ void c_optimize() {
         max_index = min_index;
         while (inst_list[max_index] != NULL) {
             if (inst_list[max_index]->next != NULL) {
-                if (inst_list[max_index]->next->label)
+                if (inst_list[max_index]->next->label || inst_list[max_index]->next->op == OP_BR)
                     break;
             } else
                 break;
@@ -116,7 +117,13 @@ void c_optimize() {
         }
 
         calc_depth(temp_list, 0, length - 1);
+        
         free(temp_list);
+
+        if (inst_list[max_index]->next != NULL)
+            if (inst_list[max_index]->next->op == OP_BR)
+                max_index++;
+
         min_index = max_index + 1;
     }
 
@@ -127,14 +134,14 @@ void c_optimize() {
 
     for (i = 0; i < count; ddg.schedule_time[i++] = -1);
     for (i = 0; i < count; ddg.ready_cycle[i++] = 0);
-
+    
 #ifdef MULTIOP
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
     while (min_index < count) {
         max_index = min_index;
         while (inst_list[max_index] != NULL) {
             if (inst_list[max_index]->next != NULL) {
-                if (inst_list[max_index]->next->label)
+                if (inst_list[max_index]->next->label || inst_list[max_index]->next->op == OP_BR)
                     break;
             } else
                 break;
@@ -160,7 +167,25 @@ void c_optimize() {
         }
 #endif
 
-        cycle_schedule(temp_list, &ddg, w, 0, length - 1);
+        max_cycle = cycle_schedule(temp_list, &ddg, w, 0, length - 1, offset);
+
+        if (inst_list[max_index]->next != NULL) {
+            if (inst_list[max_index]->next->op == OP_BR) {
+                ddg.schedule_time[inst_list[max_index]->next->count] = max_cycle;
+                offset = max_cycle + 1;
+                max_index++;
+            } else
+                offset = 0;
+        }
+        
+        if (inst_list[max_index]->op == OP_BRA) {
+            ddg.schedule_time[inst_list[max_index]->count] = max_cycle - 1;
+        }
+            
+        
+        
+        
+        
         free(temp_list);
         min_index = max_index + 1;
     }
@@ -173,9 +198,8 @@ void c_optimize() {
 
         printf("%d\n", list->depth);
     }*/
-
+    
     sort_by_cycle(&ddg, inst_list);
-
 
     if (flag_regalloc) {
         // perform register allocation
@@ -306,8 +330,7 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
             fprintf(fptr, "\t");
         else if (previous_type == OP_OUT || previous_type == OP_IN)
             fprintf(fptr, "\t\t");
-    }
-    else if (last_cycle != -1)
+    } else if (last_cycle != -1)
 #endif
         fprintf(fptr, "\n");
 
@@ -371,13 +394,16 @@ void print_inst(FILE* fptr, inst_t i, ddg_t *ddg) {
 }
 
 void print_list(FILE *fptr, inst_t head, ddg_t *ddg) {
-    inst_t branch = NULL;
     int max_latency = 1;
     int curr_sched;
     int prev_sched = 0;
 
     while (head) {
 
+        if (head->label)
+            printf("%s\n", head->label);
+        printf("%d\n", ddg->schedule_time[head->count]);
+        
         curr_sched = ddg->schedule_time[head->count];
 
         if (curr_sched == prev_sched)
@@ -391,32 +417,9 @@ void print_list(FILE *fptr, inst_t head, ddg_t *ddg) {
             max_latency = latency(head);
         }
 
-        if (head->op == OP_BRA) {
-            branch = head;
-            if (head->next != NULL)
-                head = head->next;
-        }
-
-        if (branch) {
-            if (head->next == NULL) {
-                print_inst(fptr, branch, ddg);
-                branch = NULL;
-            } else if (head->label) {
-                print_inst(fptr, branch, ddg);
-                print_inst(fptr, head, ddg);
-                branch = NULL;
-            }
-        } else
             print_inst(fptr, head, ddg);
 
         prev_sched = ddg->schedule_time[head->count];
-
-        /*
-                if (head->next != NULL) {
-                    if (head->next->op != OP_RET)
-                        max_latency = latency(head->next);
-                }
-         */
 
         head = head->next;
     }

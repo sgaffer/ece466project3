@@ -76,7 +76,7 @@ void sort_by_cycle(ddg_t *ddg, inst_t *inst_list) {
     return;
 }
 
-void sort_by_depth(inst_t *inst_list) {      // pass ENTIRE list to this function
+void sort_by_depth(inst_t *inst_list) { // pass ENTIRE list to this function
     inst_t temp;
     int i, j, min_index, max_index;
     int swapped = 1;
@@ -92,6 +92,9 @@ void sort_by_depth(inst_t *inst_list) {      // pass ENTIRE list to this functio
             do {
                 if (inst_list[block_end]->label != NULL)
                     break;
+                else if (inst_list[block_end]->op == OP_BR) {
+                    break;
+                }
                 block_end++;
             } while (block_end != count);
         for (i = block_start; i < block_end; i++) {
@@ -114,6 +117,12 @@ void sort_by_depth(inst_t *inst_list) {      // pass ENTIRE list to this functio
             if (!swapped)
                 break;
         }
+
+        if (block_end <= max_index) {
+            if (inst_list[block_end]->op == OP_BR)
+                block_end++;
+        }
+
         block_start = block_end;
         block_end++;
     }
@@ -124,9 +133,9 @@ void sort_by_depth(inst_t *inst_list) {      // pass ENTIRE list to this functio
     inst_list[max_index]->next = NULL;
 
     instList = inst_list[min_index];
-    
+
 #ifdef debug
-        for (i = min_index; i <= max_index; i++) {
+    for (i = min_index; i <= max_index; i++) {
         if (inst_list[i]->label)
             printf("%s\n", inst_list[i]->label);
         printf("%d with depth = %d", inst_list[i]->op, inst_list[i]->depth);
@@ -136,11 +145,11 @@ void sort_by_depth(inst_t *inst_list) {      // pass ENTIRE list to this functio
             printf("\n");
     }
 #endif
-    
+
     return;
 }
 
-void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int max_index) {
+int cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int max_index, int offset) {
 
     int cycle;
     int i, j, k;
@@ -148,8 +157,8 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
     int deps_met = 0;
     int used_slots = 0;
     int ops_in_list = 1;
-    
-    cycle = 0; // 4
+
+    cycle = offset; // 4
     while (ops_in_list != 0) { // 5
         for (i = min_index; i <= max_index; i++) { // 7
             X = inst_list[i]; // 9
@@ -181,12 +190,11 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
                                 ddg->ready_cycle[Y->count] = max(ddg->ready_cycle[Y->count], cycle + max(0, latency(X) - latency(Y) + 1)); // 20 
                         }
                         //printf("Y ready cycle = %d\n", ddg->ready_cycle[Y->count]);
-
                     }
                     ddg->schedule_time[X->count] = cycle; // 23
                     used_slots++; // resource used
                     k = i; // k is current instruction's position on list
-                    if (inst_list[k]->op == OP_IN || inst_list[k]->op == OP_BR)
+                    if (inst_list[k]->op == OP_IN)
                         cycle++;
                     do { // shift entire list down to delete instruction
                         inst_list[k] = inst_list[k + 1];
@@ -205,7 +213,7 @@ void cycle_schedule(inst_t *inst_list, ddg_t *ddg, int slots, int min_index, int
             ops_in_list = 1;
     }
 
-    return;
+    return cycle;
 }
 
 
