@@ -50,6 +50,10 @@ void c_optimize() {
     int max_index, length;
     inst_t *temp_list;
     int i;
+    intNode* intGraph;
+    live_range *live;
+    
+    live = (live_range*)malloc(sizeof(live_range));
 #ifdef MULTIOP
     int offset = 0;
     int max_cycle;
@@ -96,6 +100,10 @@ void c_optimize() {
     previous_type = -1;
     cfg = generate_cfg();
     ddg = generate_ddg();
+    
+    calcLiveness(&cfg);
+    intGraph = calcInterference(live, number_of_registers());
+    regAlloc(intGraph, number_of_registers(), k, instList);
 
     for (min_index = 0; inst_list[min_index] == NULL; min_index++);
     while (min_index < count) {
@@ -180,11 +188,7 @@ void c_optimize() {
         
         if (inst_list[max_index]->op == OP_BRA) {
             ddg.schedule_time[inst_list[max_index]->count] = max_cycle - 1;
-        }
-            
-        
-        
-        
+        }     
         
         free(temp_list);
         min_index = max_index + 1;
